@@ -24,3 +24,20 @@ LocaFacil e um sistema completo de aluguel de veiculos desenvolvido com PHP, MyS
 - Google Fonts (Poppins)
 
 ## Estrutura do Projeto
+```
+locafacil/
+├── index.php              # Pagina principal (SSR + listagem de veiculos)
+├── api.php                # Endpoint JSON (cadastro/login/logout)
+├── teste_db.php           # Script de teste de conexao com o banco
+├── database.sql           # Schema + dados iniciais (MySQL)
+├── includes/
+│   ├── db.php              # Conexao PDO
+│   ├── auth.php            # Cadastro/login/logout/sessao
+│   ├── csrf.php            # Geracao/validacao de token CSRF
+│   └── sanitize.php        # Sanitizacao e validadores de entrada
+├── css/
+│   └── veiculos.css        # Estilos (tema claro/escuro, responsivo)
+├── js/
+│   └── veiculos.js         # Filtros, busca, menu mobile, auth (fetch)
+└── imagens/                # Logo, banner e fotos dos veiculos
+```
