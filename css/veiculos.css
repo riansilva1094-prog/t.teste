@@ -105,7 +105,10 @@ img {
     color: #ffffff;
 }
 
-/* ===== HEADER ===== */
+/* ===== HEADER =====
+   Cores fixas (nao usam as variaveis --dark/--light, que se invertem no tema escuro):
+   o header sobrepoe imagens/secoes variadas, entao mantem contraste garantido
+   com fundo escuro translucido em qualquer estado, tema ou secao. */
 header {
     position: fixed;
     top: 0;
@@ -114,11 +117,11 @@ header {
     padding: 16px 0;
     z-index: 1000;
     transition: var(--transition);
-    background: transparent;
+    background: linear-gradient(to bottom, rgba(11, 23, 37, 0.75) 0%, rgba(11, 23, 37, 0.35) 70%, rgba(11, 23, 37, 0) 100%);
 }
 
 header.ativo {
-    background: var(--dark);
+    background: rgba(11, 23, 37, 0.95);
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
     padding: 10px 0;
     backdrop-filter: blur(10px);
@@ -137,7 +140,7 @@ header.ativo {
     display: flex;
     align-items: center;
     gap: 12px;
-    color: var(--white);
+    color: #fffdfa;
 }
 
 .logo img {
@@ -163,7 +166,7 @@ header.ativo {
 }
 
 #nav-desktop a {
-    color: var(--white);
+    color: #fffdfa;
     font-size: 14px;
     font-weight: 500;
     transition: var(--transition);
@@ -206,11 +209,182 @@ header.ativo {
     color: #ff4757 !important;
 }
 
+.theme-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    color: #fffdfa;
+    font-size: 16px;
+    transition: var(--transition);
+    flex-shrink: 0;
+}
+
+.theme-toggle:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: rotate(15deg);
+}
+
+.theme-toggle-mobile {
+    display: flex !important;
+    align-items: center;
+    gap: 10px;
+}
+
+/* ===== MENU DO USUARIO ===== */
+.user-menu {
+    position: relative;
+}
+
+.user-menu-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fffdfa;
+    padding: 8px 16px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: var(--transition);
+}
+
+.user-menu-toggle:hover {
+    border-color: var(--primary);
+}
+
+.user-menu-toggle i {
+    font-size: 17px;
+}
+
+.user-menu-toggle .seta {
+    font-size: 10px;
+    transition: transform 0.2s;
+}
+
+.user-menu.ativo .user-menu-toggle .seta {
+    transform: rotate(180deg);
+}
+
+.selo-vip {
+    color: #ffd166 !important;
+    font-size: 13px !important;
+}
+
+.badge-vip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #ffd166;
+    color: #6b4c00;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-left: 6px;
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+
+.user-menu-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 14px);
+    right: 0;
+    width: 240px;
+    background: var(--white);
+    color: var(--dark);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    z-index: 1001;
+}
+
+.user-menu.ativo .user-menu-dropdown {
+    display: block;
+}
+
+.user-menu-info {
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--gray-light);
+}
+
+.user-menu-info strong {
+    display: block;
+    font-size: 14px;
+}
+
+.user-menu-info small {
+    color: var(--gray);
+    font-size: 12px;
+}
+
+/* especificidade elevada (#nav-desktop) para vencer a regra "#nav-desktop a { color: #fffdfa }" */
+#nav-desktop .user-menu-dropdown a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    font-size: 14px;
+    color: var(--dark);
+    transition: var(--transition);
+}
+
+#nav-desktop .user-menu-dropdown a::after {
+    display: none;
+}
+
+#nav-desktop .user-menu-dropdown a:hover {
+    background: var(--light);
+    color: var(--primary);
+}
+
+#nav-desktop .user-menu-dropdown a.sair {
+    color: #ff6b6b;
+}
+
+#nav-desktop .user-menu-dropdown a.sair:hover {
+    background: rgba(255, 107, 107, 0.1);
+    color: #ff4757;
+}
+
+.user-menu-info-mobile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 0;
+    margin-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.user-menu-info-mobile i {
+    font-size: 34px;
+    color: var(--primary);
+}
+
+.user-menu-info-mobile strong {
+    display: block;
+    color: var(--white);
+    font-size: 15px;
+}
+
+.user-menu-info-mobile small {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 12px;
+}
+
 .menu-toggle {
     display: none;
     background: transparent;
     border: 1px solid rgba(255, 255, 255, 0.2);
-    color: var(--white);
+    /* cor fixa: fica dentro do header, que agora tem fundo escuro fixo em qualquer tema */
+    color: #fffdfa;
     font-size: 28px;
     padding: 8px 12px;
     border-radius: 8px;
@@ -270,7 +444,8 @@ header.ativo {
     background-size: cover;
     background-position: center;
     position: relative;
-    color: var(--white);
+    /* cor fixa: o hero sempre fica sobre uma imagem escura, em qualquer tema */
+    color: #fffdfa;
     isolation: isolate;
 }
 
@@ -361,7 +536,8 @@ header.ativo {
     gap: 12px;
     padding: 16px 32px;
     background: rgba(255, 255, 255, 0.08);
-    color: var(--white);
+    /* cor fixa: acompanha o fundo translucido (rgba branco fixo) acima, que nao muda com o tema */
+    color: #fffdfa;
     font-weight: 600;
     font-size: 14px;
     border-radius: 8px;
@@ -671,11 +847,13 @@ header.ativo {
     color: var(--primary);
 }
 
-/* ===== NOSSA HISTORIA ===== */
+/* ===== NOSSA HISTORIA =====
+   Faixa de destaque sempre escura (contraste proposital com o resto da pagina),
+   por isso usa cores fixas em vez de --dark/--light, que se invertem no tema escuro. */
 .about {
     padding: 80px max(24px, calc((100vw - 1180px)/2));
-    background: var(--dark);
-    color: var(--white);
+    background: #0b1725;
+    color: #fffdfa;
 }
 
 .about-container {
@@ -1050,32 +1228,6 @@ header.ativo {
     color: var(--primary-dark);
 }
 
-/* Welcome Card */
-.welcome-card {
-    background: var(--white);
-    padding: 48px;
-    border-radius: 16px;
-    text-align: center;
-    box-shadow: var(--shadow);
-}
-
-.welcome-card i {
-    font-size: 64px;
-    color: var(--primary);
-    margin-bottom: 16px;
-}
-
-.welcome-card h3 {
-    font-size: 24px;
-    font-weight: 700;
-    margin-bottom: 8px;
-}
-
-.welcome-card p {
-    color: var(--gray);
-    margin-bottom: 24px;
-}
-
 /* ===== LOGIN MODAL ===== */
 .login-modal {
     display: none;
@@ -1148,25 +1300,29 @@ header.ativo {
 
 /* ===== FOOTER ===== */
 footer {
-    background: var(--dark);
-    color: var(--white);
-    padding: 40px max(24px, calc((100vw - 1180px)/2));
+    /* cores fixas: rodape sempre escuro, mesmo padrao da secao "Nossa Historia" */
+    background: #0b1725;
+    color: #fffdfa;
+    padding: 60px max(24px, calc((100vw - 1180px)/2)) 30px;
 }
 
 .footer-container {
     max-width: 1180px;
     margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-    text-align: center;
+}
+
+.footer-colunas {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr;
+    gap: 48px;
+    margin-bottom: 36px;
 }
 
 .footer-brand {
     display: flex;
     align-items: center;
     gap: 12px;
+    margin-bottom: 16px;
 }
 
 .footer-brand img {
@@ -1184,12 +1340,78 @@ footer {
     color: var(--primary);
 }
 
-footer p {
-    color: var(--gray);
+.footer-sobre p {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 14px;
+    line-height: 1.7;
+    margin-bottom: 20px;
+    max-width: 320px;
+}
+
+.footer-social {
+    display: flex;
+    gap: 10px;
+}
+
+.footer-social a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    color: #fffdfa;
+    font-size: 16px;
+    transition: var(--transition);
+}
+
+.footer-social a:hover {
+    background: var(--primary);
+    transform: translateY(-3px);
+}
+
+.footer-col h4 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 18px;
+}
+
+.footer-col a,
+.footer-col span {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 14px;
+    margin-bottom: 14px;
+    transition: var(--transition);
+}
+
+.footer-col a:hover {
+    color: var(--primary);
+}
+
+.footer-col i {
+    color: var(--primary);
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.footer-divisor {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+    margin-bottom: 24px;
+}
+
+.footer-copyright {
+    color: rgba(255, 255, 255, 0.5);
     font-size: 13px;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 4px;
+    text-align: center;
 }
 
 /* ===== RESPONSIVIDADE ===== */
@@ -1361,5 +1583,186 @@ footer p {
     .login-modal-content {
         padding: 24px 16px;
         margin: 0 8px;
+    }
+}
+
+/* ===== PAGINA DE RECUPERACAO DE SENHA ===== */
+.pagina-recuperacao {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--light);
+    padding: 24px;
+}
+
+.recuperacao-box {
+    background: var(--white);
+    border-radius: 16px;
+    padding: 48px;
+    max-width: 440px;
+    width: 100%;
+    box-shadow: var(--shadow);
+    text-align: center;
+}
+
+.recuperacao-box .logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 24px;
+}
+
+.recuperacao-box .logo img {
+    width: 40px;
+}
+
+.recuperacao-box .logo span {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.recuperacao-box .logo span span {
+    color: var(--primary);
+}
+
+.recuperacao-box h2 {
+    font-size: 24px;
+    margin-bottom: 8px;
+}
+
+.recuperacao-box p {
+    color: var(--gray);
+    margin-bottom: 24px;
+}
+
+.recuperacao-box form {
+    text-align: left;
+}
+
+/* ===== RESUMO DA RESERVA (MODAL) ===== */
+.resumo-reserva {
+    background: var(--light);
+    border-radius: 12px;
+    padding: 16px;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+.resumo-reserva .linha {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+}
+
+.resumo-reserva .linha.total {
+    font-weight: 700;
+    font-size: 17px;
+    color: var(--primary);
+    border-top: 1px solid var(--gray-light);
+    margin-top: 8px;
+    padding-top: 10px;
+}
+
+/* ===== MINHAS RESERVAS ===== */
+.minhas-reservas {
+    padding: 60px 40px;
+    background: var(--white);
+}
+
+.minhas-reservas .titulo-veiculos {
+    margin-bottom: 40px;
+}
+
+.lista-reservas {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.reserva-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+    background: var(--light);
+    border-radius: 14px;
+    padding: 18px 22px;
+}
+
+.reserva-item .reserva-info h4 {
+    font-size: 16px;
+    margin-bottom: 4px;
+}
+
+.reserva-item .reserva-info p {
+    font-size: 13px;
+    color: var(--gray);
+}
+
+.reserva-item .reserva-acoes {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.status-reserva {
+    display: inline-block;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-reserva.pendente { background: #fdeee0; color: #c96a00; }
+.status-reserva.confirmada { background: #e5f6ec; color: #2e9e5b; }
+.status-reserva.cancelada { background: #fbe9e9; color: #d64545; }
+.status-reserva.finalizada { background: #e6eefc; color: #2b5fd9; }
+
+.btn-cancelar-reserva {
+    background: none;
+    border: 1px solid var(--gray-light);
+    color: var(--gray);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-cancelar-reserva:hover {
+    background: #fbe9e9;
+    color: var(--danger, #d64545);
+    border-color: transparent;
+}
+
+@media (max-width: 768px) {
+    .minhas-reservas {
+        padding: 40px 16px;
+    }
+    .reserva-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .footer-colunas {
+        grid-template-columns: 1fr;
+        gap: 32px;
+        text-align: center;
+    }
+    .footer-brand,
+    .footer-social {
+        justify-content: center;
+    }
+    .footer-sobre p {
+        max-width: none;
+    }
+    .footer-col a,
+    .footer-col span {
+        justify-content: center;
     }
 }

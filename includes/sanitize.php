@@ -17,4 +17,8 @@ function validarTelefone($telefone) {
 function validarSenha($senha) {
     return strlen($senha) >= 8 && preg_match('/[A-Z]/', $senha) && preg_match('/[0-9]/', $senha);
 }
+
+function validarCNH($cnh) {
+    return preg_match('/^[0-9]{9,20}$/', $cnh);
+}
 ?>

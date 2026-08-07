@@ -31,13 +31,22 @@ CREATE TABLE IF NOT EXISTS usuarios (
     telefone VARCHAR(24) NOT NULL,
     senhaHash VARCHAR(255) NOT NULL,
     situacao ENUM('ativo', 'inativo') DEFAULT 'ativo' NOT NULL,
+    tipo_pessoa ENUM('fisica', 'juridica') DEFAULT 'fisica' NOT NULL,
+    nivel_cliente ENUM('comum', 'vip', 'bloqueado') DEFAULT 'comum' NOT NULL,
     token_recuperacao VARCHAR(255) NULL,
     token_expira DATETIME NULL,
+    tentativas_login INT DEFAULT 0 NOT NULL,
+    bloqueado_ate DATETIME NULL,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_email (email),
     INDEX idx_situacao (situacao)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS tentativas_login INT DEFAULT 0 NOT NULL;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS bloqueado_ate DATETIME NULL;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS tipo_pessoa ENUM('fisica', 'juridica') DEFAULT 'fisica' NOT NULL;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS nivel_cliente ENUM('comum', 'vip', 'bloqueado') DEFAULT 'comum' NOT NULL;
 
 -- =============================================
 -- TABELA: veiculos
@@ -100,6 +109,62 @@ CREATE TABLE IF NOT EXISTS logs_atividades (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =============================================
+-- TABELA: motoristas
+-- =============================================
+CREATE TABLE IF NOT EXISTS motoristas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(160) NOT NULL,
+    email VARCHAR(320) UNIQUE,
+    telefone VARCHAR(24) NOT NULL,
+    cnh VARCHAR(20) NOT NULL UNIQUE,
+    cnh_categoria VARCHAR(5) NOT NULL,
+    cnh_validade DATE NOT NULL,
+    situacao ENUM('ativo', 'inativo') DEFAULT 'ativo' NOT NULL,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_situacao_motorista (situacao)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =============================================
+-- TABELA: funcionarios
+-- =============================================
+CREATE TABLE IF NOT EXISTS funcionarios (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(160) NOT NULL,
+    email VARCHAR(320) NOT NULL UNIQUE,
+    telefone VARCHAR(24),
+    senhaHash VARCHAR(255) NOT NULL,
+    cargo ENUM('admin', 'gerente', 'atendente') DEFAULT 'atendente' NOT NULL,
+    situacao ENUM('ativo', 'inativo') DEFAULT 'ativo' NOT NULL,
+    tentativas_login INT DEFAULT 0 NOT NULL,
+    bloqueado_ate DATETIME NULL,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_email_funcionario (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+ALTER TABLE funcionarios ADD COLUMN IF NOT EXISTS tentativas_login INT DEFAULT 0 NOT NULL;
+ALTER TABLE funcionarios ADD COLUMN IF NOT EXISTS bloqueado_ate DATETIME NULL;
+
+-- =============================================
+-- TABELA: funcionario_permissoes
+-- Privilegios granulares por modulo (ignorados para cargo='admin', que tem acesso total)
+-- =============================================
+CREATE TABLE IF NOT EXISTS funcionario_permissoes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    funcionarioId INT NOT NULL,
+    modulo ENUM('veiculos', 'motoristas', 'usuarios', 'funcionarios', 'reservas') NOT NULL,
+    pode_ver TINYINT(1) DEFAULT 0 NOT NULL,
+    pode_criar TINYINT(1) DEFAULT 0 NOT NULL,
+    pode_editar TINYINT(1) DEFAULT 0 NOT NULL,
+    pode_deletar TINYINT(1) DEFAULT 0 NOT NULL,
+    FOREIGN KEY (funcionarioId) REFERENCES funcionarios(id) ON DELETE CASCADE,
+    UNIQUE KEY uniq_funcionario_modulo (funcionarioId, modulo)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+ALTER TABLE funcionario_permissoes MODIFY modulo ENUM('veiculos', 'motoristas', 'usuarios', 'funcionarios', 'reservas') NOT NULL;
+
+-- =============================================
 -- DADOS INICIAIS
 -- =============================================
 
@@ -123,6 +188,39 @@ INSERT INTO veiculos (id, categoriaId, marca, modelo, placa, ano, transmissao, c
 ON DUPLICATE KEY UPDATE modelo = VALUES(modelo);
 
 -- Usuario Admin (Senha: Admin@123)
-INSERT INTO usuarios (nome, email, telefone, senhaHash, situacao) 
-VALUES ('Administrador', 'admin@locafacil.com', '(11) 99999-9999', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'ativo')
+INSERT INTO usuarios (nome, email, telefone, senhaHash, situacao)
+VALUES ('Administrador', 'admin@locafacil.com', '(11) 99999-9999', '$2y$10$lojWHR7EsntrFxoA7PFOnu2cOYn2f9zK6DVx1zXJMVKxUQEk0Cp6q', 'ativo')
+ON DUPLICATE KEY UPDATE nome = VALUES(nome), senhaHash = VALUES(senhaHash), tentativas_login = 0, bloqueado_ate = NULL;
+
+-- Motoristas (frota interna)
+INSERT INTO motoristas (nome, email, telefone, cnh, cnh_categoria, cnh_validade) VALUES
+('Carlos Eduardo Silva', 'carlos.silva@locafacil.com', '(11) 98888-1111', '12345678900', 'B', '2028-05-10'),
+('Fernanda Oliveira Souza', 'fernanda.souza@locafacil.com', '(11) 98888-2222', '23456789011', 'AB', '2027-11-22')
 ON DUPLICATE KEY UPDATE nome = VALUES(nome);
+
+-- Funcionario Admin do painel (Senha: Admin@123) - acesso total, ignora funcionario_permissoes
+INSERT INTO funcionarios (nome, email, telefone, senhaHash, cargo, situacao)
+VALUES ('Administrador do Painel', 'admin@locafacil.com', '(11) 99999-0000', '$2y$10$M1ela98chtn7dIc9HgHJWOc.i0yJwtNYNn.HGERBLYQcgb93h/yfm', 'admin', 'ativo')
+ON DUPLICATE KEY UPDATE nome = VALUES(nome);
+
+-- Funcionario Gerente de exemplo (Senha: Gerente@123) - privilegios limitados
+INSERT INTO funcionarios (nome, email, telefone, senhaHash, cargo, situacao)
+VALUES ('Gerente de Frota', 'gerente@locafacil.com', '(11) 99999-0001', '$2y$10$996sXxIxuUD/VXJbFKufHOYiLVG6o6HHNVMJ0bmm8UUP3TVaaLSTC', 'gerente', 'ativo')
+ON DUPLICATE KEY UPDATE nome = VALUES(nome);
+
+-- Privilegios do Gerente de exemplo: gerencia veiculos e motoristas, so visualiza usuarios, sem acesso a funcionarios
+INSERT INTO funcionario_permissoes (funcionarioId, modulo, pode_ver, pode_criar, pode_editar, pode_deletar)
+SELECT id, 'veiculos', 1, 1, 1, 0 FROM funcionarios WHERE email = 'gerente@locafacil.com'
+ON DUPLICATE KEY UPDATE pode_ver = VALUES(pode_ver), pode_criar = VALUES(pode_criar), pode_editar = VALUES(pode_editar), pode_deletar = VALUES(pode_deletar);
+
+INSERT INTO funcionario_permissoes (funcionarioId, modulo, pode_ver, pode_criar, pode_editar, pode_deletar)
+SELECT id, 'motoristas', 1, 1, 1, 0 FROM funcionarios WHERE email = 'gerente@locafacil.com'
+ON DUPLICATE KEY UPDATE pode_ver = VALUES(pode_ver), pode_criar = VALUES(pode_criar), pode_editar = VALUES(pode_editar), pode_deletar = VALUES(pode_deletar);
+
+INSERT INTO funcionario_permissoes (funcionarioId, modulo, pode_ver, pode_criar, pode_editar, pode_deletar)
+SELECT id, 'usuarios', 1, 0, 0, 0 FROM funcionarios WHERE email = 'gerente@locafacil.com'
+ON DUPLICATE KEY UPDATE pode_ver = VALUES(pode_ver), pode_criar = VALUES(pode_criar), pode_editar = VALUES(pode_editar), pode_deletar = VALUES(pode_deletar);
+
+INSERT INTO funcionario_permissoes (funcionarioId, modulo, pode_ver, pode_criar, pode_editar, pode_deletar)
+SELECT id, 'reservas', 1, 1, 1, 0 FROM funcionarios WHERE email = 'gerente@locafacil.com'
+ON DUPLICATE KEY UPDATE pode_ver = VALUES(pode_ver), pode_criar = VALUES(pode_criar), pode_editar = VALUES(pode_editar), pode_deletar = VALUES(pode_deletar);

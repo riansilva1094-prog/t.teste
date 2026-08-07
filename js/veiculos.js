@@ -1,3 +1,56 @@
+// ===== MASCARAS DE INPUT =====
+function mascararTelefone(valor) {
+    valor = valor.replace(/\D/g, '').slice(0, 11);
+    if (valor.length === 0) return '';
+    if (valor.length <= 2) return '(' + valor;
+    if (valor.length <= 6) return '(' + valor.slice(0, 2) + ') ' + valor.slice(2);
+    if (valor.length <= 10) return '(' + valor.slice(0, 2) + ') ' + valor.slice(2, 6) + '-' + valor.slice(6);
+    return '(' + valor.slice(0, 2) + ') ' + valor.slice(2, 7) + '-' + valor.slice(7);
+}
+
+function aplicarMascaras() {
+    document.querySelectorAll('input[data-mask="telefone"]').forEach((input) => {
+        input.addEventListener('input', () => {
+            input.value = mascararTelefone(input.value);
+        });
+    });
+}
+
+aplicarMascaras();
+
+// ===== TEMA CLARO/ESCURO =====
+function atualizarIconeTema() {
+    const escuro = document.documentElement.classList.contains('dark-theme');
+    document.querySelectorAll('.theme-toggle i, .theme-toggle-mobile i').forEach((icon) => {
+        icon.className = escuro ? 'bi bi-sun-fill' : 'bi bi-moon-stars-fill';
+    });
+}
+
+function atualizarBannerHero() {
+    const hero = document.querySelector('.hero');
+    if (!hero) return;
+    const escuro = document.documentElement.classList.contains('dark-theme');
+    const banner = escuro ? hero.dataset.bannerEscuro : hero.dataset.bannerClaro;
+    if (banner) {
+        hero.style.backgroundImage = `url('${banner}')`;
+    }
+}
+
+function toggleTheme() {
+    document.documentElement.classList.toggle('dark-theme');
+    localStorage.setItem('theme', document.documentElement.classList.contains('dark-theme') ? 'dark' : 'light');
+    atualizarIconeTema();
+    atualizarBannerHero();
+}
+
+if (localStorage.getItem('theme') === 'dark') {
+    document.documentElement.classList.add('dark-theme');
+}
+document.addEventListener('DOMContentLoaded', () => {
+    atualizarIconeTema();
+    atualizarBannerHero();
+});
+
 // ===== HEADER SCROLL =====
 window.addEventListener('scroll', () => {
     const header = document.getElementById('header');
@@ -40,27 +93,61 @@ document.querySelectorAll('#menu-mobile a').forEach(link => {
     });
 });
 
-// ===== LOGIN MODAL =====
-function toggleLogin() {
-    const modal = document.getElementById('loginModal');
+// ===== MODAIS (login, esqueci senha, reserva, configuracoes) =====
+const MODAIS = ['loginModal', 'esqueciSenhaModal', 'reservaModal', 'configuracoesModal'];
+
+function toggleModal(id) {
+    const modal = document.getElementById(id);
+    if (!modal) return;
     modal.classList.toggle('ativo');
     document.body.style.overflow = modal.classList.contains('ativo') ? 'hidden' : 'auto';
 }
 
-// Fechar modal ao clicar fora
-document.getElementById('loginModal')?.addEventListener('click', (e) => {
-    if (e.target === e.currentTarget) {
-        toggleLogin();
+function toggleLogin() { toggleModal('loginModal'); }
+function toggleEsqueciSenha() { toggleModal('esqueciSenhaModal'); }
+function toggleReserva() { toggleModal('reservaModal'); }
+function toggleConfiguracoes() { toggleModal('configuracoesModal'); }
+
+// ===== MENU DO USUARIO (dropdown) =====
+function toggleUserMenu() {
+    document.getElementById('userMenu')?.classList.toggle('ativo');
+}
+
+function fecharUserMenu() {
+    document.getElementById('userMenu')?.classList.remove('ativo');
+}
+
+document.addEventListener('click', (e) => {
+    const userMenu = document.getElementById('userMenu');
+    if (userMenu && userMenu.classList.contains('ativo') && !userMenu.contains(e.target)) {
+        fecharUserMenu();
     }
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        fecharUserMenu();
+    }
+});
+
+// Fechar modal ao clicar fora
+MODAIS.forEach((id) => {
+    document.getElementById(id)?.addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) {
+            toggleModal(id);
+        }
+    });
 });
 
 // Fechar modal com ESC
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-        const modal = document.getElementById('loginModal');
-        if (modal?.classList.contains('ativo')) {
-            toggleLogin();
-        }
+        MODAIS.forEach((id) => {
+            const modal = document.getElementById(id);
+            if (modal?.classList.contains('ativo')) {
+                toggleModal(id);
+            }
+        });
     }
 });
 
@@ -227,6 +314,190 @@ async function logout() {
         }
     } catch (error) {
         alert('Erro ao realizar logout.');
+    }
+}
+
+// ===== CONFIGURACOES DA CONTA =====
+async function handleAtualizarPerfil(e) {
+    e.preventDefault();
+    const nome = document.getElementById('config-nome').value.trim();
+    const telefone = document.getElementById('config-telefone').value.trim();
+    const novaSenha = document.getElementById('config-nova-senha').value;
+    const senhaAtual = document.getElementById('config-senha-atual').value;
+    const csrfToken = document.getElementById('config-csrf').value;
+
+    try {
+        const res = await fetch('api.php?action=atualizar_perfil', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nome, telefone, novaSenha, senhaAtual, csrf_token: csrfToken })
+        });
+        const data = await res.json();
+
+        if (data.sucesso) {
+            alert(data.mensagem || 'Dados atualizados com sucesso.');
+            location.reload();
+        } else {
+            alert(data.mensagem || 'Nao foi possivel atualizar os dados.');
+        }
+    } catch (error) {
+        alert('Erro de conexão. Tente novamente.');
+    }
+}
+
+// ===== RESERVAS =====
+let reservaDiaria = 0;
+
+function abrirReserva(veiculoId, nomeVeiculo, diaria) {
+    reservaDiaria = diaria;
+    document.getElementById('reserva-veiculo-id').value = veiculoId;
+    document.getElementById('reserva-veiculo-nome').textContent = nomeVeiculo;
+
+    const hoje = new Date().toISOString().split('T')[0];
+    const dataInicio = document.getElementById('reserva-data-inicio');
+    const dataFim = document.getElementById('reserva-data-fim');
+    dataInicio.min = hoje;
+    dataInicio.value = '';
+    dataFim.value = '';
+    document.getElementById('resumoReserva').style.display = 'none';
+
+    toggleModal('reservaModal');
+}
+
+function atualizarResumoReserva() {
+    const dataInicio = document.getElementById('reserva-data-inicio').value;
+    const dataFim = document.getElementById('reserva-data-fim').value;
+    const resumo = document.getElementById('resumoReserva');
+
+    if (!dataInicio || !dataFim) {
+        resumo.style.display = 'none';
+        return;
+    }
+
+    const inicio = new Date(dataInicio);
+    const fim = new Date(dataFim);
+    const dias = Math.round((fim - inicio) / 86400000);
+
+    if (dias <= 0) {
+        resumo.style.display = 'none';
+        return;
+    }
+
+    const total = dias * reservaDiaria;
+    document.getElementById('resumo-dias').textContent = dias + (dias === 1 ? ' diaria' : ' diarias');
+    document.getElementById('resumo-total').textContent = 'R$ ' + total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    resumo.style.display = 'block';
+}
+
+document.getElementById('reserva-data-inicio')?.addEventListener('change', (e) => {
+    document.getElementById('reserva-data-fim').min = e.target.value;
+    atualizarResumoReserva();
+});
+document.getElementById('reserva-data-fim')?.addEventListener('change', atualizarResumoReserva);
+
+async function handleReserva(e) {
+    e.preventDefault();
+    const veiculoId = document.getElementById('reserva-veiculo-id').value;
+    const dataInicio = document.getElementById('reserva-data-inicio').value;
+    const dataFim = document.getElementById('reserva-data-fim').value;
+    const csrfToken = document.getElementById('reserva-csrf').value;
+
+    if (!dataInicio || !dataFim) {
+        alert('Selecione as datas de retirada e devolucao.');
+        return;
+    }
+
+    try {
+        const res = await fetch('api.php?action=reservar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ veiculoId, data_inicio: dataInicio, data_fim: dataFim, csrf_token: csrfToken })
+        });
+        const data = await res.json();
+
+        if (data.sucesso) {
+            alert(data.mensagem || 'Reserva realizada com sucesso!');
+            location.reload();
+        } else {
+            alert(data.mensagem || 'Nao foi possivel concluir a reserva.');
+        }
+    } catch (error) {
+        alert('Erro de conexão. Tente novamente.');
+    }
+}
+
+async function handleCancelarReserva(id) {
+    if (!confirm('Deseja realmente cancelar esta reserva?')) {
+        return;
+    }
+
+    const csrfToken = document.getElementById('listaReservas')?.dataset.csrf;
+
+    try {
+        const res = await fetch('api.php?action=cancelar_reserva', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, csrf_token: csrfToken })
+        });
+        const data = await res.json();
+
+        if (data.sucesso) {
+            location.reload();
+        } else {
+            alert(data.mensagem || 'Nao foi possivel cancelar a reserva.');
+        }
+    } catch (error) {
+        alert('Erro de conexão. Tente novamente.');
+    }
+}
+
+// ===== RECUPERACAO DE SENHA =====
+async function handleEsqueciSenha(e) {
+    e.preventDefault();
+    const email = document.getElementById('esqueci-email').value.trim();
+    const csrfToken = document.getElementById('esqueci-csrf').value;
+
+    try {
+        const res = await fetch('api.php?action=esqueci_senha', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, csrf_token: csrfToken })
+        });
+        const data = await res.json();
+        alert(data.mensagem || 'Se o e-mail existir, enviaremos instrucoes.');
+        if (data.sucesso) {
+            toggleEsqueciSenha();
+        }
+    } catch (error) {
+        alert('Erro de conexão. Tente novamente.');
+    }
+}
+
+async function handleRedefinirSenha(e) {
+    e.preventDefault();
+    const token = document.getElementById('token').value;
+    const csrfToken = document.getElementById('csrf_token_redefinir').value;
+    const novaSenha = document.getElementById('nova-senha').value;
+    const confirmarSenha = document.getElementById('confirmar-senha').value;
+
+    if (novaSenha !== confirmarSenha) {
+        alert('As senhas nao coincidem.');
+        return;
+    }
+
+    try {
+        const res = await fetch('api.php?action=redefinir_senha', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, senha: novaSenha, csrf_token: csrfToken })
+        });
+        const data = await res.json();
+        alert(data.mensagem || 'Erro ao redefinir senha.');
+        if (data.sucesso) {
+            window.location.href = 'index.php';
+        }
+    } catch (error) {
+        alert('Erro de conexão. Tente novamente.');
     }
 }
 
